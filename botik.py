@@ -1,134 +1,4 @@
 import datetime
-import pickle
-import os
-from collections import UserDict
-
-
-class Field:
-    def __init__(self):
-        self.value = None
-
-    def __str__(self):
-        return str(self.value)
-
-
-class Name(Field):
-    pass
-
-
-class Phone(Field):
-    pass
-
-
-class Birthday(Field):
-    def __set__(self, instance, value):
-        if value:
-            try:
-                datetime.datetime.strptime(value, "%Y-%m-%d")
-                self.value = value
-            except ValueError:
-                raise ValueError("Invalid birthday format. Please use 'YYYY-MM-DD' format.")
-        else:
-            self.value = None
-
-
-class Record:
-    def __init__(self, name, birthday=None):
-        self.name = Name()
-        self.name.value = name
-        self.phones = []
-        if birthday:
-            self.birthday = Birthday()
-            self.birthday.value = birthday
-        else:
-            self.birthday = None
-
-    def add_phone(self, number):
-        phone = Phone()
-        phone.value = number
-        self.phones.append(phone)
-
-    def remove_phone(self, number):
-        self.phones = [phone for phone in self.phones if str(phone) != number]
-
-    def edit_phone(self, old_number, new_number):
-        for phone in self.phones:
-            if str(phone) == old_number:
-                phone.value = new_number
-                return f"Changed phone number for contact: {self.name.value}, {new_number}"
-        return f"Phone number '{old_number}' not found for contact: {self.name.value}"
-
-    def set_birthday(self, birthday):
-        self.birthday.value = birthday
-
-    def days_to_birthday(self):
-        if self.birthday and self.birthday.value:
-            today = datetime.date.today()
-            next_birthday = datetime.datetime.strptime(self.birthday.value, "%Y-%m-%d").date().replace(year=today.year)
-            if today > next_birthday:
-                next_birthday = next_birthday.replace(year=today.year + 1)
-            days_left = (next_birthday - today).days
-            return days_left
-        else:
-            return "Birthday not set"
-
-    def __str__(self):
-        result = f"Name: {self.name}\n"
-        result += f"Birthday: {self.birthday}\n"
-        result += "Phones:\n"
-        for phone in self.phones:
-            result += f"- {phone}\n"
-        return result.strip()
-
-
-class AddressBook(UserDict):
-    def add_record(self, record):
-        self.data[str(record.name)] = record
-
-    def remove_record(self, name):
-        del self.data[name]
-
-    def __str__(self):
-        result = ""
-        for record in self.data.values():
-            result += f"{record}\n\n"
-        return result.strip()
-
-    def save_to_file(self, file_path):
-        with open(file_path, "wb") as file:
-            pickle.dump(self.data, file)
-
-    def load_from_file(self, file_path):
-        if os.path.exists(file_path):
-            with open(file_path, "rb") as file:
-                self.data = pickle.load(file)
-
-
-def input_error(func):
-    def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except KeyError:
-            return "Contact not found."
-        except ValueError:
-            return "Invalid input."
-        except IndexError:
-            return "Invalid command."
-
-    return inner
-
-
-contacts = AddressBook()
-
-
-@input_error
-def add_contact(name, phone=None, birthday=None):
-    if name in contacts:
-        return f"Contact '{name}' already exists."
-    record = Record(name, birthday)
-    if phone:
-        record.add_phone(phone)
-import datetime
 import json
 from collections import UserDict
 
@@ -277,17 +147,14 @@ class AddressBook(UserDict):
 
     def search_contacts(self, query):
         results = []
-        for record in self.data.values():  # Access 'values' on the 'data' dictionary
+        for record in self.data.values():
             if query in record.name.value:
                 results.append(record)
             for phone in record.phones:
                 if query in str(phone):
                     results.append(record)
-                    break
+                    break  
         return results
-
-    
-
     def __str__(self):
         result = ""
         for record in self.data.values():
